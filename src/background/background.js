@@ -163,7 +163,10 @@ async function analyze(candidates, pageMeta) {
       .filter(Boolean)
       .join(" ");
     let manual = null;
-    if (manualRules.hideKeywords.some((k) => text.includes(k))) {
+    if ((c.signals || []).includes("ad_card")) {
+      // 平台适配器确认的广告/推广卡：确定性隐藏，不调用 Jev（省 token）
+      manual = { action: "hide", reason: "ad_detected", confidence: 1 };
+    } else if (manualRules.hideKeywords.some((k) => text.includes(k))) {
       manual = { action: "hide", reason: "manual_dislike", confidence: 1 };
     } else if (manualRules.foldKeywords.some((k) => text.includes(k))) {
       manual = { action: "fold", reason: "manual_dislike", confidence: 1 };

@@ -5,7 +5,10 @@
 
 export const CONFIG = {
   // ---- 域名白名单：只在以下域名生效，其余站点一律不分析 ----
-  hostWhitelist: ["www.xiaohongshu.com", "xiaohongshu.com"],
+  hostWhitelist: [
+    "www.xiaohongshu.com", "xiaohongshu.com",
+    "www.bilibili.com", "bilibili.com",
+  ],
 
   // ---- Jev API ----
   apiBase: "https://api.typesafe.ai/v1/systemone",
