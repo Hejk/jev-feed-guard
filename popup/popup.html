@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <title>JevFeedGuard（清净流）设置</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <div class="wrap">
+    <h1>JevFeedGuard（清净流）</h1>
+    <p class="sub">用 Jev 过滤小红书信息流里你不感兴趣的内容与广告</p>
+
+    <section>
+      <h2>API Key（BYOK）</h2>
+      <p class="hint">
+        在 <a href="https://console.typesafe.ai/keys" target="_blank" rel="noopener">console.typesafe.ai/keys</a>
+        创建 Key 并粘贴保存。已保存后输入框会显示 <b>••••••••</b> 占位提示，Key 不会消失，无需重复输入。
+      </p>
+      <input type="password" id="apiKey" placeholder="tsk_..." autocomplete="off" />
+      <label class="check">
+        <input type="checkbox" id="disclosure" />
+        我了解：被分析笔记的标题/作者/标签/摘要会发送给 api.typesafe.ai（不含正文、图片、完整链接）
+      </label>
+      <div class="row">
+        <button id="saveKey">保存并测试</button>
+        <button id="clearKey" class="danger">清除 Key</button>
+        <span id="status" class="status"></span>
+      </div>
+    </section>
+
+    <section>
+      <h2>判定阈值</h2>
+      <div class="grid">
+        <label>广告概率阈值 <input type="number" id="adThreshold" step="0.05" min="0" max="1" /></label>
+        <label>广告-内容边际 <input type="number" id="adMargin" step="0.05" min="0" max="1" /></label>
+        <label>不感兴趣隐藏线 <input type="number" id="interestHide" step="0.05" min="0" max="1" /></label>
+        <label>折叠下限 <input type="number" id="foldLower" step="0.05" min="0" max="1" /></label>
+        <label>最低置信度 <input type="number" id="minConfidence" step="0.05" min="0" max="1" /></label>
+      </div>
+      <button id="saveThresholds">保存阈值</button>
+    </section>
+
+    <section>
+      <h2>我不喜欢的内容（自助添加）</h2>
+      <p class="hint">
+        不用写代码，用大白话写就行。每条一行，或直接用逗号分隔。<br/>
+        例：标题党、博眼球的、卖儿童玩具的、装傻充愣的、带货抽奖的<br/>
+        保存后会自动变成 Jev 的判断指令，下次分析即生效（已分析的卡片 7 天内不再重判）。
+      </p>
+      <textarea id="customDislikes" rows="4" placeholder="在这里补充你不喜欢看的内容…"></textarea>
+      <div class="row">
+        <button id="saveCustomDislikes">保存</button>
+        <span id="customStatus" class="status"></span>
+      </div>
+    </section>
+
+    <section>
+      <h2>你的不感兴趣设置</h2>
+      <div id="profile" class="profile">加载中…</div>
+      <p class="hint">修改方式：编辑 <code>src/shared/config.js</code> 的 profile / manualRules，然后在 chrome://extensions 点本扩展的"刷新"。</p>
+    </section>
+
+    <section>
+      <h2>今日统计</h2>
+      <div class="stats" id="stats">加载中…</div>
+      <div class="row">
+        <button id="resetStats">清空今日统计</button>
+        <button id="resetAll" class="danger">重置全部数据</button>
+      </div>
+    </section>
+
+    <section>
+      <h2>最近判定（Jev 实际怎么判的）</h2>
+      <div id="recent" class="recent">暂无</div>
+      <p class="hint">隐藏/折叠才会在信息流里出现效果：隐藏=卡片消失；折叠=卡片位置显示一行灰条（可点"展开"恢复并永久记住）。</p>
+    </section>
+
+    <p class="foot">v0.2.0 · 未与小红书官方合作 · 仅供学习研究</p>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>
