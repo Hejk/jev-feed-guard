@@ -105,12 +105,36 @@
   const processed = new Set(); // 已处理过的卡片元素（防重复）
   const queued = []; // 待分析的卡片（超出批量上限时排队）
   const sessionCount = { analyzed: 0 };
+  const knownVerdicts = new Map(); // noteId -> verdict：粘性重应用（抗 React 重渲染抹掉 DOM 修改）
   let busy = false;
   let timer = null;
+
+  // ---------- 粘性重应用：把已知判定重新打回卡片 ----------
+  // B站首页是 React 虚拟列表，任何状态变化都可能重渲染/替换卡片 DOM，
+  // 导致插件的隐藏/折叠被抹掉（统计照涨、页面被还原）。每次收集前先重打一遍。
+  function reapplySticky() {
+    if (knownVerdicts.size === 0) return;
+    const cards = adapter.collect();
+    for (const card of cards) {
+      if (card.dataset.jevHidden === "1" || card.dataset.jevFolded === "1") continue;
+      const desc = adapter.extract(card, 0);
+      if (!desc) continue;
+      const v = knownVerdicts.get(desc.noteId);
+      if (!v) continue;
+      if (v.action === "hide") {
+        card.dataset.jevHidden = "1";
+        hideCard(card);
+      } else if (v.action === "fold") {
+        card.dataset.jevFolded = "1";
+        foldCard(card, desc);
+      }
+    }
+  }
 
   // ---------- 卡片收集 ----------
   function collectCards() {
     if (sessionCount.analyzed >= MAX_PER_SESSION) return;
+    reapplySticky();
     const cards = adapter.collect();
     for (const card of cards) {
       if (processed.has(card)) continue;
@@ -180,6 +204,13 @@
           " withNoteId=" + (resp.verdicts || []).filter((v) => v.noteId).length +
           " batch=" + batch.length + " mapped=" + verdictByNote.size
         );
+        for (const [nid, v] of verdictByNote) {
+          knownVerdicts.set(nid, v);
+          if (knownVerdicts.size > 3000) {
+            const oldest = knownVerdicts.keys().next().value;
+            knownVerdicts.delete(oldest);
+          }
+        }
         for (let k = 0; k < batch.length; k++) {
           const card = batch[k];
           const desc = adapter.extract(card, k);
@@ -239,8 +270,8 @@
     const bar = document.createElement("div");
     bar.style.cssText =
       "display:flex;align-items:center;gap:8px;padding:8px 12px;margin:0;" +
-      "background:#f6f8fa;border:1px dashed #d0d7de;border-radius:8px;font-size:13px;color:#57606a;" +
-      "box-sizing:border-box;width:100%;min-height:36px;";
+      "background:#f6f8fa;border:1px dashed #d0d7de;border-left:4px solid #ff2442;border-radius:8px;" +
+      "font-size:13px;color:#57606a;box-sizing:border-box;width:100%;min-height:36px;";
     const label = document.createElement("span");
     label.style.cssText = "flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;";
     label.textContent = (desc.title || adapter.foldLabel) + "（Jev 认为你可能不感兴趣）";
