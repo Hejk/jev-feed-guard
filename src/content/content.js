@@ -173,12 +173,13 @@
         console.log("[JFG] sending ANALYZE...");
 
         let resp;
+        const _host = (location.hostname || "").trim().toLowerCase().replace(/\.$/, "");
         try {
           resp = await Promise.race([
             chrome.runtime.sendMessage({
               type: "ANALYZE",
               candidates,
-              pageMeta: { host: location.hostname, title: document.title },
+              pageMeta: { host: _host, title: document.title },
             }),
             new Promise((res) => setTimeout(() => res({ ok: false, error: "TIMEOUT_25S" }), 25000)),
           ]);
@@ -188,7 +189,8 @@
 
         if (!resp || !resp.ok) {
           // fail-open：失败就把这批卡片标记为已处理但不动页面
-          console.log("[JFG] ANALYZE not-ok error=" + (resp ? resp.error : "NO_RESPONSE") + " batch=" + candidates.length);
+          console.log("[JFG] ANALYZE not-ok error=" + (resp ? resp.error : "NO_RESPONSE") +
+            " host=" + _host + " batch=" + candidates.length);
           sessionCount.analyzed += candidates.length;
           continue;
         }

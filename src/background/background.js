@@ -82,7 +82,14 @@ async function getThresholds() {
 }
 
 function isWhitelistedHost(host) {
-  return CONFIG.hostWhitelist.some((h) => host === h || host.endsWith("." + h));
+  if (!host) return false;
+  let h = String(host).trim().toLowerCase().replace(/\.$/, "");
+  if (h.startsWith("www.")) h = h.slice(4);
+  return CONFIG.hostWhitelist.some((entry) => {
+    let e = String(entry).trim().toLowerCase();
+    if (e.startsWith("www.")) e = e.slice(4);
+    return h === e || h.endsWith("." + e);
+  });
 }
 
 function underDailyBudget(tokens) {
@@ -281,7 +288,9 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   (async () => {
     switch (msg && msg.type) {
       case "ANALYZE": {
-        console.log("[JFG-SW] ANALYZE received, candidates=" + (msg.candidates || []).length);
+        console.log("[JFG-SW] ANALYZE received, candidates=" + (msg.candidates || []).length +
+          " host=" + ((msg.pageMeta || {}).host || "") +
+          " wl=" + isWhitelistedHost((msg.pageMeta || {}).host));
         const _r = await analyze(msg.candidates || [], msg.pageMeta || {});
         console.log("[JFG-SW] ANALYZE done ok=" + _r.ok + " err=" + (_r.error || "") + " verdicts=" + (_r.verdicts || []).length);
         return _r;
