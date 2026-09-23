@@ -12,6 +12,14 @@
 (function () {
   "use strict";
 
+  // 扩展被重载后，旧页面里的内容脚本实例的 chrome.runtime 通道会失效，
+  // 任何在途 Promise 都会以 "Extension context invalidated" 拒绝（红色报错）。
+  // 这是重载插件的正常噪音，不是 bug：全局吞掉，避免吓到用户；页面 F5 后即消失。
+  self.addEventListener("unhandledrejection", (e) => {
+    const m = e && e.reason && (e.reason.message || String(e.reason));
+    if (m && /Extension context invalidated/i.test(String(m))) e.preventDefault();
+  });
+
   // ---------- 平台适配器 ----------
   // 每个适配器：
   //   match(): 是否命中当前域名
