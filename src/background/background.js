@@ -265,7 +265,13 @@ async function analyze(candidates, pageMeta) {
 
   return {
     ok: true,
-    verdicts: [...manualVerdicts, ...verdicts, ...decided],
+    // 关键：decided 本身不含 noteId/i，必须把原始候选（toAsk）的字段并回去，
+    // 否则 content script 无法按 noteId 把判定映射回 DOM 卡片（此前所有 Jev 实时判定都不落页面的根因）。
+    verdicts: [
+      ...manualVerdicts,
+      ...verdicts,
+      ...decided.map((d, k) => ({ ...(toAsk[k] || {}), ...d })),
+    ],
     usage: { tokens: realTokens, costUsd: (realTokens / 1e6) * CONFIG.costPerMTokenUsd },
   };
 }
@@ -274,8 +280,12 @@ async function analyze(candidates, pageMeta) {
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   (async () => {
     switch (msg && msg.type) {
-      case "ANALYZE":
-        return await analyze(msg.candidates || [], msg.pageMeta || {});
+      case "ANALYZE": {
+        console.log("[JFG-SW] ANALYZE received, candidates=" + (msg.candidates || []).length);
+        const _r = await analyze(msg.candidates || [], msg.pageMeta || {});
+        console.log("[JFG-SW] ANALYZE done ok=" + _r.ok + " err=" + (_r.error || "") + " verdicts=" + (_r.verdicts || []).length);
+        return _r;
+      }
 
       case "RESTORE_NOTE":
         await pinNote(msg.noteId);
